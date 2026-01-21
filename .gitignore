@@ -1,0 +1,37 @@
+# --- Build Artifacts (Binaries & Objects) ---
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+
+# --- Debugging & Analysis Files ---
+*.map
+*.su
+*.dmp
+*.list
+
+# --- Editor/IDE Temporary Files ---
+# VS Code
+.vscode/
+*.code-workspace
+
+# IntelliJ / JetBrains
+.idea/
+*.iml
+
+# Eclipse / STM32CubeIDE
+.settings/
+.project
+.cproject
+.mxproject
+.buildpath
+
+# Mac OS Files
+.DS_Store
+
+# --- Safety ---
+!src/
+!docs/
+!linker.ld
+!Makefile
