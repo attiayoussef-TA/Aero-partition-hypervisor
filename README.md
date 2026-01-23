@@ -23,34 +23,51 @@ The system utilizes a time-triggered architecture where the MPU is dynamically r
 
 ```mermaid
 flowchart TD
-    %% Define Subgraphs
-    subgraph KERNEL [Safe Domain: The Hypervisor]
-        direction TB
-        Sched(Deterministic Scheduler)
-        MPU_Driver(Dynamic MPU Reconfigurator)
-        Handler(Fault Handler / Safe Reset)
-    end
-    
-    subgraph USER [Unsafe Domain: User Partitions]
-        direction TB
-        TaskA(Task A: Landing Gear)
-        TaskB(Task B: Fuel System)
+    %% --- Global Styling ---
+    classDef kernel fill:#f0f8ff,stroke:#00509d,stroke-width:2px,color:#00296b,rx:5,ry:5;
+    classDef user fill:#fffaf0,stroke:#d4a373,stroke-width:2px,color:#9c6644,rx:5,ry:5;
+    classDef hardware fill:#ffffff,stroke:#6c757d,stroke-width:1px,stroke-dasharray: 5 5,color:#495057;
+    classDef hazard fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#b71c1c;
+
+    %% --- Hardware Layer ---
+    subgraph HW ["HARDWARE TRIGGERS"]
+        Tick(("⏱️ SysTick 1ms")):::hardware
     end
 
-    %% Interactions
-    Sched -->|SysTick 1ms| MPU_Driver
-    MPU_Driver -->|1. Restrict Memory| TaskA
-    MPU_Driver -->|2. Restrict Memory| TaskB
-    
-    TaskA -.->|SVC #0 Yield| Sched
-    TaskB -.->|SVC #0 Yield| Sched
-    TaskA -- Crash/Overflow --> Handler
-    Handler -->|Force Reset| KERNEL
+    %% --- Kernel Space ---
+    subgraph KERNEL ["🛡️ KERNEL SPACE (Privileged)"]
+        direction TB
+        Sched["⚙️ Scheduler & Context Switch"]:::kernel
+        MPU["🔐 MPU Dynamic Reconfiguration"]:::kernel
+        Reset["🔥 Safety Reset"]:::hazard
+    end
 
-    %% Styling
-    style KERNEL fill:#ccffcc,stroke:#333,stroke-width:2px
-    style USER fill:#ffcccc,stroke:#333,stroke-width:2px
-    style Handler fill:#ff0000,stroke:#333,stroke-width:4px,color:#fff
+    %% --- User Space ---
+    subgraph USER ["⚠️ USER SPACE (Unprivileged)"]
+        direction TB
+        PartA["✈️ Partition A: Landing Gear"]:::user
+        PartB["⛽ Partition B: Fuel System"]:::user
+    end
+
+    %% --- The Control Loop ---
+    Tick ==>|1. Interrupt| Sched
+    Sched ==>|2. Select Next Task| MPU
+    
+    MPU ==>|3. Lock Memory & Launch| PartA
+    MPU ==>|3. Lock Memory & Launch| PartB
+
+    %% --- Returns & Faults ---
+    PartA -.->|4. SVC Yield| Sched
+    PartB -.->|4. SVC Yield| Sched
+    
+    PartA -- Memory Violation --> Reset
+    PartB -- Stack Overflow --> Reset
+    Reset -.->|Reboot System| Sched
+
+    %% --- Link Styling ---
+    linkStyle 0,1,2,3 stroke:#00509d,stroke-width:3px;
+    linkStyle 4,5 stroke:#d4a373,stroke-width:2px,stroke-dasharray: 5 5;
+    linkStyle 6,7 stroke:#d32f2f,stroke-width:2px;
 ```
 ---
 ## 📂 Project Manifest
