@@ -93,7 +93,7 @@ Each file in this repository maps to a specific layer of the **ARINC 653** safet
 * **`linker.ld`**: The **Memory Map**. Defines the rigid physical addresses for Kernel vs. User space and contains **Build-Time Assertions** to prevent memory overlap.
 * **`Makefile`**: The **Traceability Tool**. Orchestrates the build, generates `.map` files for audit, and performs stack usage analysis (`-fstack-usage`).
 
-* # 🚀 How to Run (Hardware-in-the-Loop)
+* # 🚀 Proposed Verification Methodology
 
 ## 1. Prerequisites
 
@@ -118,7 +118,7 @@ This project includes a safety-critical build system that generates stack usage 
 
 ### STM32 Aero Kernel Build & Debug Guide
 
-## 1. Compile & Verify
+### 1. Compile & Verify
 
 Build the project using `make`:
 
@@ -142,7 +142,7 @@ openocd -f board/stm32f4discovery.cfg
 ```
 ### Connect and Debug
 
-Launch GDB:
+Launch GDB and intercept the scheduler:
 
 ```bash
 arm-none-eabi-gdb aero_kernel.elf
@@ -156,12 +156,14 @@ arm-none-eabi-gdb aero_kernel.elf
 ```
 ### Observation
 
-Once the breakpoint hits, check the MPU registers:
+Once the breakpoint hits, inspect the MPU registers to verify the Space Partitioning is active :
 
 ```gdb
 (gdb) print/x *0xE000ED9C  # Check MPU_RBAR (Region Base Address)
 (gdb) print/x *0xE000EDA0  # Check MPU_RASR (Region Attribute and Size)
 ```
+> **Success Criteria:** The values must match the memory constraints defined in the `linker.ld` for the currently scheduled partition.
+
 
 
 
